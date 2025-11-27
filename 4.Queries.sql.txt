@@ -1,0 +1,127 @@
+SELECT
+  *
+FROM
+  "SALES"."RETAIL"."RETAIL_SALES_DATASET"
+LIMIT 10;
+
+--Daily Sales Price per Unit
+SELECT 
+    Date,
+    Sales / Quantity_Sold AS Daily_Unit_Pric
+FROM "SALES"."RETAIL"."RETAIL_SALES_DATASET";
+
+--Average Unit Sales Price
+SELECT 
+    SUM(Sales) / SUM(Quantity_Sold) AS Avg_Unit_Pric
+FROM "SALES"."RETAIL"."RETAIL_SALES_DATASET";
+
+
+-- Daily percentage Gross Profit
+SELECT 
+    Date,
+    ((Sales - Cost_Of_Sales) / Sales) * 100 AS Daily_Gross_Profit_Percent
+FROM "SALES"."RETAIL"."RETAIL_SALES_DATASET";
+
+-- Daily % Gross Profit per Unit
+
+SELECT 
+    Date,
+    ((Sales - Cost_Of_Sales) / Quantity_Sold) AS Daily_Gross_Profit_Per_Unit
+FROM "SALES"."RETAIL"."RETAIL_SALES_DATASET";
+
+
+-- Price Elasticity of Demand for 3 Promotional Periods
+
+-- Before Promotion
+WITH Before AS (
+    SELECT AVG(Sales / Quantity_Sold) AS Price_Before,
+           AVG(Quantity_Sold) AS Qty_Before
+FROM "SALES"."RETAIL"."RETAIL_SALES_DATASET"    
+    WHERE Date BETWEEN '1/1/2014' AND '10/1/2014'
+),
+-- During Promotion
+During AS (
+    SELECT AVG(Sales / Quantity_Sold) AS Price_During,
+           AVG(Quantity_Sold) AS Qty_During
+FROM "SALES"."RETAIL"."RETAIL_SALES_DATASET"
+    WHERE Date BETWEEN '11/1/2014' AND '20/1/2014'
+)
+SELECT 
+    ((Qty_During - Qty_Before) / Qty_Before) / 
+    ((Price_During - Price_Before) / Price_Before) AS Price_Elasticity
+FROM Before, During;
+
+
+-- checking if any data transactions exist for these dates
+SELECT COUNT(*)
+FROM "SALES"."RETAIL"."RETAIL_SALES_DATASET"
+WHERE date BETWEEN '2014-01-01' AND '20/1/2014';
+
+-- checking the before period data
+SELECT COUNT(*) AS record_count,
+    AVG(Sales / Quantity_Sold) AS Price_Before,
+    AVG(Quantity_Sold) AS Qty_Before
+FROM "SALES"."RETAIL"."RETAIL_SALES_DATASET"
+WHERE date BETWEEN '2014-01-01' AND '2014-01-10';
+
+
+
+
+-- Monthly Sales Trend
+WITH src AS (
+  SELECT
+    TO_DATE("DATE", 'DD/MM/YYYY') AS dt,
+    Sales,
+    Cost_Of_Sales,
+    Quantity_Sold
+FROM "SALES"."RETAIL"."RETAIL_SALES_DATASET"
+  
+)
+SELECT
+  DATE_TRUNC('MONTH', dt) AS month_start,
+  SUM(Sales) AS total_sales
+FROM src
+GROUP BY month_start
+ORDER BY month_start;
+
+
+-- top 10 highest Sales Dates
+SELECT Date, Sales
+FROM "SALES"."RETAIL"."RETAIL_SALES_DATASET"
+ORDER BY Sales DESC
+LIMIT 10;
+
+
+-- gross profit trend
+SELECT
+  TO_CHAR(DATE_TRUNC('MONTH', TO_DATE("DATE",'DD/MM/YYYY')), 'YYYY-MM') AS month,
+  SUM(Sales - Cost_Of_Sales) AS total_gross_profit
+FROM "SALES"."RETAIL"."RETAIL_SALES_DATASET"
+GROUP BY DATE_TRUNC('MONTH', TO_DATE("DATE",'DD/MM/YYYY'))
+ORDER BY month;
+
+-- first sale date and last sale date
+SELECT 
+  MIN(TO_DATE("DATE",'DD/MM/YYYY')) AS start_date,
+  MAX(TO_DATE("DATE",'DD/MM/YYYY')) AS last_date
+FROM "SALES"."RETAIL"."RETAIL_SALES_DATASET";
+
+
+
+
+SELECT
+  sales,
+  cost_of_sales,
+  quantity_sold,
+  (sales - cost_of_sales) AS gross_profit,
+  CASE WHEN quantity_sold > 0 THEN sales / quantity_sold 
+  END AS daily_unit_price,
+  CASE WHEN sales > 0 THEN ((sales - cost_of_sales) / sales) * 100 
+  END AS daily_gross_profit_percent,
+  CASE WHEN quantity_sold > 0 THEN (sales - cost_of_sales) / quantity_sold 
+  END AS daily_gross_profit_per_unit
+
+FROM "SALES"."RETAIL"."RETAIL_SALES_DATASET"
+ORDER BY sales,
+        cost_of_sales,
+        quantity_sold;
